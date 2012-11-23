@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Atmel Studio Solution File, Format Version 11.00
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "simplemesh_api_demo", "simplemesh_api_demo.cproj", "{E608E343-52AC-4F4A-A37F-B65AAFFA5FE5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|AVR = Debug|AVR
+		Release|AVR = Release|AVR
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E608E343-52AC-4F4A-A37F-B65AAFFA5FE5}.Debug|AVR.ActiveCfg = Debug|AVR
+		{E608E343-52AC-4F4A-A37F-B65AAFFA5FE5}.Debug|AVR.Build.0 = Debug|AVR
+		{E608E343-52AC-4F4A-A37F-B65AAFFA5FE5}.Release|AVR.ActiveCfg = Release|AVR
+		{E608E343-52AC-4F4A-A37F-B65AAFFA5FE5}.Release|AVR.Build.0 = Release|AVR
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

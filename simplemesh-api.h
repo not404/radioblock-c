@@ -144,8 +144,8 @@ uint8_t ackStatus;
 #define CHANNEL_24													0x18
 #define CHANNEL_25													0x19
 #define CHANNEL_26													0x1a	// Not certified...
-#define RX_ON																0x00
-#define TX_ON																0x01
+#define RX_ON																0x01
+#define TX_ON																0x00
 #define TX_POWER_3_0_DBM   	 								0x00
 #define TX_POWER_2_8_DBM   	 								0x01
 #define TX_POWER_2_3_DBM   	 								0x02

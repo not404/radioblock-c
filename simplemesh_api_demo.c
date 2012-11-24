@@ -579,11 +579,11 @@ int main(void)
 	processResponse();
 	processResponse();
                   
-	setTRXState(puartBuf, TX_ON, uartBuf);
-	processResponse();
-	getTRXState(puartBuf, uartBuf);			
-	processResponse();
-	processResponse();			
+//	setTRXState(puartBuf, TX_ON, uartBuf);
+//	processResponse();
+//	getTRXState(puartBuf, uartBuf);			
+//	processResponse();
+//	processResponse();			
 	
 	setTxPower(puartBuf, TX_POWER_2_8_DBM, uartBuf);
 	processResponse();
@@ -594,15 +594,25 @@ int main(void)
 	dataRequest(puartBuf, 0x0001, DATA_OPTION_NONE, 0x42, 6, testBuf, uartBuf);
 	processResponse();
 
+	setTRXState(puartBuf, RX_ON, uartBuf);
+	processResponse();
+	getTRXState(puartBuf, uartBuf);			
+	processResponse();
+	processResponse();
   while(1)
   {
+		processResponse();
 		// Fun.
-		toggleLed(puartBuf, LED_TOGGLE, uartBuf);
-		timerLoop(100);	// WARNING, can BLOCK a loooong time.
-		processResponse();
-		testBuf[5]++;
-		dataRequest(puartBuf, 0x0001, DATA_OPTION_NONE, 0x42, 6, testBuf, uartBuf);
-		processResponse();
+//		toggleLed(puartBuf, LED_TOGGLE, uartBuf);
+//		timerLoop(100);	// WARNING, can BLOCK a loooong time.
+//		processResponse();
+//		testBuf[5]++;
+//		setTRXState(puartBuf, TX_ON, uartBuf);
+//		processResponse();
+//		dataRequest(puartBuf, 0x0001, DATA_OPTION_NONE, 0x42, 6, testBuf, uartBuf);
+//		processResponse();
+//		setTRXState(puartBuf, RX_ON, uartBuf);
+//		processResponse();
 		
 		
 		

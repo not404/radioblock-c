@@ -615,8 +615,9 @@ uint8_t dataIndication(uint8_t* data, uint8_t payloadLen)
 	writeUserByte('D'); writeUserByte('A'); writeUserByte('T');
 	writeUserByte('A'); writeUserByte(' '); writeUserByte('I');
 	writeUserByte('N'); writeUserByte('D'); writeUserByte('I');
-	writeUserByte('C'); writeUserByte('T'); writeUserByte('I');
-	writeUserByte('O'); writeUserByte('N'); writeUserByte('\n');
+	writeUserByte('C'); writeUserByte('A'); writeUserByte('T'); 
+	writeUserByte('I'); writeUserByte('O'); writeUserByte('N'); 
+	writeUserByte('\n');
 		
 	/* User code here */
 	uint16_t address;

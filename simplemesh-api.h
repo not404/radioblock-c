@@ -46,6 +46,9 @@ uint8_t isrCmd;
 uint8_t ackStatus;
 /***************************** MACROS ****************************************/
 
+// For debug on Xplained series boards
+#define XPLAINED_A1_DEMO										1
+
 #define CMD_TX_TEST_REQUEST                 0x01
 #define CMD_TX_RESET_REQUEST                0x03
 #define CMD_TX_SETTINGS_REQUEST             0x04
@@ -209,9 +212,9 @@ uint8_t   getTxPower(void (*uartTx)(uint8_t *array, uint8_t length), uint8_t* ua
 uint8_t   getAckState(void (*uartTx)(uint8_t *array, uint8_t length), uint8_t* uartBuf);
 
 // Response or Indication Functions - For user's to put their code into!
-uint8_t 	Ack(uint8_t* data, uint8_t len);
-uint8_t 	testResponse(uint8_t* data, uint8_t len);
-uint8_t 	wakeUpIndication(uint8_t* data, uint8_t len);
+uint8_t 	ack(void);
+uint8_t 	testResponse(void);
+uint8_t 	wakeUpIndication(void);
 uint8_t 	dataConfirmation(uint8_t* data, uint8_t len);
 uint8_t 	dataIndication(uint8_t* data, uint8_t len);
 uint16_t 	getAddressResponse(uint8_t* data, uint8_t len);
@@ -222,6 +225,7 @@ uint8_t 	getTxPowerResponse(uint8_t* data, uint8_t len);
 uint8_t 	getAckStateResponse(uint8_t* data, uint8_t len);
 
 // Function should be called by user's UART function when a byte is received.
+void 			processResponse(void);
 void 			rxState(uint8_t* buf, uint8_t cmd, uint8_t len);
 
 // Helper Functions - Used internally

@@ -52,6 +52,8 @@
 /*****************************************************************************
 *****************************************************************************/
 // Macros
+
+
 // Define that selects the Usart used in example.
 #define UARTC0 USARTC0
 #define UARTF0 USARTF0
@@ -139,7 +141,7 @@ uint8_t uartBuf[134];
 // Fun!
 uint8_t ledFlag;
 
-// Used for printint to USARTC0
+// Used for printing to USARTC0
 uint8_t userBuf[USERCIRCSIZE];
 uint8_t userEnd;
 uint8_t userStart;
@@ -391,80 +393,6 @@ void startTimer(uint16_t microseconds)
 }
 
 /*****************************************************************************/
-void processResponse(void)
-{
-	uint8_t i;
-	uint8_t cmdBuf[128];
-	
-	while(1)
-		{
-			if(1 == ackFlag)
-			{		
-				// Call ACK processor here.	
-				writeUserByte('A'); writeUserByte('C'); writeUserByte('K'); 
-				writeUserByte(' '); writeUserByte('O'); writeUserByte('K'); 
-				writeUserByte('\n');
-				
-						
-				// Reset ACK variables.
-				ackStatus = 0;
-				ackFlag = 0;
-				isrLen = 0;
-				break;
-			}			
-			
-			if(1 == testCmd)
-			{
-				// Process Test response here.
-				writeUserByte('T'); writeUserByte('E'); writeUserByte('S');
-				writeUserByte('T'); writeUserByte(' '); writeUserByte('O');
-				writeUserByte('K'); writeUserByte('\n');
-		
-				// Reset variables here.
-				testCmd = 0;
-				isrLen = 0;
-				cmdLen = 0;
-				break;
-			}
-			
-			if(1 == wakeCmd)
-			{
-				// Process Wake Up Indication here.
-				writeUserByte('W'); writeUserByte('A'); writeUserByte('K'); 
-				writeUserByte('E'); writeUserByte('U'); writeUserByte('P');
-				writeUserByte(' '); writeUserByte('O'); writeUserByte('K');
-				writeUserByte('\n');
-				
-				// Reset variables here.
-				wakeCmd = 0;
-				isrLen = 0;
-				cmdLen = 0;
-				break;
-			}
-			
-			if(1 == cmdFlag)
-			{
-				// Subtract one because the length includes the command id.
-				cmdLen -= 1;
-				for(i=0; i<cmdLen; i++) 
-					cmdBuf[i] = readByte();
-				// Call the command processor here.
-				rxState(cmdBuf, isrCmd, cmdLen);
-				
-				isrLen = 0;
-				cmdLen = 0;
-				cmdFlag = 0;
-				break;
-			}			
-		}	
-	
-	while( userEnd != userStart)
-	{
-		sendUARTC0(readUserByte());
-	}
-}
-
-/*****************************************************************************/
 void timerLoop(uint8_t num)
 {
 	for(uint8_t i=0; i<num; i++)
@@ -475,7 +403,16 @@ void timerLoop(uint8_t num)
 	}	
 }
 
-
+void usartUartPrint(void)
+{
+	#if XPLAINED_A1_DEMO
+	// Print out to the Xplained-A1 uart connected through UC3 to USB...
+	while( userEnd != userStart)
+	{
+		sendUARTC0(readUserByte());
+	}
+	#endif
+}
 /*****************************************************************************/
 int main(void)
 {
@@ -555,29 +492,41 @@ int main(void)
 
 	toggleLed(puartBuf, LED_TOGGLE, uartBuf);
 	processResponse();
-
+	usartUartPrint();
+		
 	testRequest(puartBuf, uartBuf);
 	processResponse();
+	usartUartPrint();		
 	processResponse();
-
+	usartUartPrint();
+		
 	setAddress(puartBuf, 0x1234, uartBuf);
 	processResponse();
+	usartUartPrint();	
 
 	getAddress(puartBuf, uartBuf);
 	processResponse();
+	usartUartPrint();	
 	processResponse();
+	usartUartPrint();
 
 	setPanid(puartBuf, 0x5678, uartBuf); 
 	processResponse();
+	usartUartPrint();	
 	getPanid(puartBuf, uartBuf); 
 	processResponse();
+	usartUartPrint();	
 	processResponse();
+	usartUartPrint();	
 	
 	setChannel(puartBuf, CHANNEL_16, uartBuf);
 	processResponse();
+	usartUartPrint();	
 	getChannel(puartBuf,uartBuf);
 	processResponse();
+	usartUartPrint();	
 	processResponse();
+	usartUartPrint();	
                   
 //	setTRXState(puartBuf, TX_ON, uartBuf);
 //	processResponse();
@@ -587,21 +536,30 @@ int main(void)
 	
 	setTxPower(puartBuf, TX_POWER_2_8_DBM, uartBuf);
 	processResponse();
+	usartUartPrint();	
 	getTxPower(puartBuf, uartBuf);			                                   
 	processResponse();
+	usartUartPrint();	
 	processResponse();
+	usartUartPrint();	
 	
 	dataRequest(puartBuf, 0x0001, DATA_OPTION_NONE, 0x42, 6, testBuf, uartBuf);
 	processResponse();
+	usartUartPrint();	
 
 	setTRXState(puartBuf, RX_ON, uartBuf);
 	processResponse();
+	usartUartPrint();		
 	getTRXState(puartBuf, uartBuf);			
 	processResponse();
+	usartUartPrint();		
 	processResponse();
+	usartUartPrint();	
+			
   while(1)
   {
 		processResponse();
+		usartUartPrint();			
 		// Fun.
 //		toggleLed(puartBuf, LED_TOGGLE, uartBuf);
 //		timerLoop(100);	// WARNING, can BLOCK a loooong time.
@@ -625,9 +583,21 @@ int main(void)
 /*
 		Receive complete interrupt service routine.
 
-		Receive complete interrupt service routine.
 		Calls the common receive complete handler with pointer to the correct USART
 		as argument.
+		
+		This is what the user must recreate on his host system - Or the equivalent
+		using a polling loop.
+		
+		The variables that are set here are global to the simplemesh API and are 
+		located in simplmesh-api.h.
+		
+		The logic is that every byte received incements the isrLength counter and
+		we already know the structure of a received command frame. So, as we 
+		increment through the received bytes we know which byte(s) we are 
+		receiving and apply logic to switch the state. When we've receied all
+		the bytes the appropriate command flag is thrown which allows the function
+		"processResponse" to finish the processing of the command.
  */
 
 ISR(USARTF0_RXC_vect)
@@ -787,3 +757,43 @@ uint8_t readUserByte(void)
 
 	return data;
 }
+
+#if 0
+/*****************************************************************************/
+
+dataConfirmation
+/*****************************************************************************/
+
+dataIndication
+/*****************************************************************************/
+
+getAddressResponse
+/*****************************************************************************/
+
+getPanidResponse
+/*****************************************************************************/
+
+getChannelResponse
+/*****************************************************************************/
+
+getTRXStateResponse
+/*****************************************************************************/
+
+getTxPowerResponse
+/*****************************************************************************/
+
+getAckStateResponse
+/*****************************************************************************/
+#endif
+
+/*****************************************************************************/
+
+/*****************************************************************************/
+
+/*****************************************************************************/
+
+/*****************************************************************************/
+
+/*****************************************************************************/
+
+/*****************************************************************************/

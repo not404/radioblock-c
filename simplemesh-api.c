@@ -541,65 +541,159 @@ uint8_t getAckState(void (*uartTx)(uint8_t *array, uint8_t length), uint8_t* uar
 										Receive side State Machine
 *****************************************************************************/
 /*
-	Notes:
-	
-	The user must create his own UART function - RadioBlocks use a default UART
-	setup of 115,200 BAUD, 8N1.
-	
-	For each character received the user's UART function should pass that 
-	character to the uartRx function which will collect the bytes, figure out
-	which RadioBlocks response it is dealing with and call the appropriate 
-	response function when all the bytes for that function are received.
-	
-	The user's UART function can be polled or interrupt based.
+	After the ISR or the polling loop catches the serial data returned from 
+	RadioBlocks it needs to be parsed. This function parses the received data.
+	Remember that Test Response and Wakeup indication have no status or return 
+	data. Also recall that ACK returns a one byte ack status that is contained 
+	in the global variable "ackStatus" that is set in the ISR or the polling 
+	loop. In the cases of all other responses or indications the functions 
+	manipulate the returned variables and present them in easy to use formats 
+	for the user to use.
 */
-
-void rxState(uint8_t* buf, uint8_t cmd, uint8_t len)
+void processResponse(void)
 {
-	switch(cmd)
+	uint8_t i;
+	uint8_t cmdBuf[128];
+	
+	while(1)
 	{
-		case CMD_RX_DATA_CONFIRMATION:
-			dataConfirmation(buf, len);
-			break;					
-		case CMD_RX_DATA_INDICATION:
-			dataIndication(buf, len);
-			break;					
-		case CMD_RX_GET_ADDRESS_RESPONSE:
-			getAddressResponse(buf, len);
-			break;					
-		case CMD_RX_GET_PANID_RESPONSE:
-			getPanidResponse(buf, len);		
-			break;					
-		case CMD_RX_GET_CHANNEL_RESPONSE:
-			getChannelResponse(buf, len);
-			break;					
-		case CMD_RX_GET_RECEIVER_STATE_RESPONSE:
-			getTRXStateResponse(buf, len);
-			break;					
-		case CMD_RX_GET_TRANSMIT_POWER_RESPONSE:
-			getTxPowerResponse(buf, len);
-			break;					
-		case CMD_RX_SET_ACK_STATE_RESPONSE:
-			getAckStateResponse(buf, len);
-			break;
-		default:
-			break;	
-	}
+			if(1 == ackFlag)
+			{
+				ack();
+					
+				// Reset ACK variables.
+				ackStatus = 0;
+				ackFlag = 0;
+				isrLen = 0;
+				break;
+			}			
+			
+			if(1 == testCmd)
+			{
+				testResponse();
+		
+				// Reset variables here.
+				testCmd = 0;
+				isrLen = 0;
+				cmdLen = 0;
+				break;
+			}
+			
+			if(1 == wakeCmd)
+			{
+				wakeUpIndication();
+				
+				// Reset variables here.
+				wakeCmd = 0;
+				isrLen = 0;
+				cmdLen = 0;
+				break;
+			}
+			
+			if(1 == cmdFlag)
+			{
+				// Subtract one because the length includes the command id
+				// which happened in the isr or polling loop.
+				cmdLen -= 1;
+				for(i=0; i<cmdLen; i++) 
+					cmdBuf[i] = readByte();
+					
+				// Call the command processor here.
+				switch(isrCmd)
+				{
+					case CMD_RX_DATA_CONFIRMATION:
+						dataConfirmation(cmdBuf, cmdLen);
+						break;					
+					case CMD_RX_DATA_INDICATION:
+						dataIndication(cmdBuf, cmdLen);
+						break;					
+					case CMD_RX_GET_ADDRESS_RESPONSE:
+						getAddressResponse(cmdBuf, cmdLen);
+						break;					
+					case CMD_RX_GET_PANID_RESPONSE:
+						getPanidResponse(cmdBuf, cmdLen);		
+						break;					
+					case CMD_RX_GET_CHANNEL_RESPONSE:
+						getChannelResponse(cmdBuf, cmdLen);
+						break;					
+					case CMD_RX_GET_RECEIVER_STATE_RESPONSE:
+						getTRXStateResponse(cmdBuf, cmdLen);
+						break;					
+					case CMD_RX_GET_TRANSMIT_POWER_RESPONSE:
+						getTxPowerResponse(cmdBuf, cmdLen);
+						break;					
+					case CMD_RX_SET_ACK_STATE_RESPONSE:
+						getAckStateResponse(cmdBuf, cmdLen);
+						break;
+					default:
+						break;	
+				}
+				
+				isrLen = 0;
+				cmdLen = 0;
+				cmdFlag = 0;
+				break;
+			}			
+	}	
 }
+
 
 /*****************************************************************************
 										Response or Indication Functions
 *****************************************************************************/
 
 /*****************************************************************************/
+uint8_t ack(void)
+{
+	#if XPLAINED_A1_DEMO
+	writeUserByte('A'); writeUserByte('C'); writeUserByte('K'); 
+	writeUserByte(' '); writeUserByte('O'); writeUserByte('K'); 
+	writeUserByte('\n');
+	#endif
+	
+	/* User code here */
+	return ackStatus;	// ackStatus is contained in a global, just return it.
+}
+
+/*****************************************************************************/
+uint8_t testResponse(void)
+{
+	#if XPLAINED_A1_DEMO
+	writeUserByte('T'); writeUserByte('E'); writeUserByte('S');
+	writeUserByte('T'); writeUserByte(' '); writeUserByte('O');
+	writeUserByte('K'); writeUserByte('\n');
+	#endif
+	
+	// There is no status returned from this...
+	
+	/* User code here */
+	return 0;
+}
+
+uint8_t wakeUpIndication(void)
+{
+	#if XPLAINED_A1_DEMO
+	writeUserByte('W'); writeUserByte('A'); writeUserByte('K'); 
+	writeUserByte('E'); writeUserByte('U'); writeUserByte('P');
+	writeUserByte(' '); writeUserByte('O'); writeUserByte('K');
+	writeUserByte('\n');
+	#endif 	
+	
+	// There is no status returned from this...
+	
+	/* User code here */
+	return 0;	
+}
+
 uint8_t dataConfirmation(uint8_t* data, uint8_t len)
 {
-	// DEBUG
+	#if XPLAINED_A1_DEMO
 	writeUserByte('D'); writeUserByte('A'); writeUserByte('T');
 	writeUserByte('A'); writeUserByte(' '); writeUserByte('C');
 	writeUserByte('O'); writeUserByte('N'); writeUserByte('F'); 
 	writeUserByte('I');	writeUserByte('R'); writeUserByte('M'); 
 	writeUserByte('\n');
+	#endif
 	
 	/* User code here */
 	uint8_t status = data[0];	// Status
@@ -611,13 +705,14 @@ uint8_t dataConfirmation(uint8_t* data, uint8_t len)
 /*****************************************************************************/
 uint8_t dataIndication(uint8_t* data, uint8_t payloadLen)
 {
-	// DEBUG
+	#if XPLAINED_A1_DEMO
 	writeUserByte('D'); writeUserByte('A'); writeUserByte('T');
 	writeUserByte('A'); writeUserByte(' '); writeUserByte('I');
 	writeUserByte('N'); writeUserByte('D'); writeUserByte('I');
 	writeUserByte('C'); writeUserByte('A'); writeUserByte('T'); 
 	writeUserByte('I'); writeUserByte('O'); writeUserByte('N'); 
 	writeUserByte('\n');
+	#endif
 		
 	/* User code here */
 	uint16_t address;
@@ -645,12 +740,13 @@ uint8_t dataIndication(uint8_t* data, uint8_t payloadLen)
 /*****************************************************************************/
 uint16_t getAddressResponse(uint8_t* data, uint8_t len)
 {
-	//DEBUG
+	#if XPLAINED_A1_DEMO
 	writeUserByte('A'); writeUserByte('D'); writeUserByte('D');
 	writeUserByte('R'); writeUserByte(' '); writeUserByte('R');
 	writeUserByte('E'); writeUserByte('S'); writeUserByte('P');
 	writeUserByte('O'); writeUserByte('N'); writeUserByte('S'); 
 	writeUserByte('E');	writeUserByte('\n');
+	#endif
 	
 	/* User code here */
 	uint16_t address;
@@ -665,12 +761,13 @@ uint16_t getAddressResponse(uint8_t* data, uint8_t len)
 /*****************************************************************************/
 uint16_t getPanidResponse(uint8_t* data, uint8_t len)
 {
-	// DEBUG
+	#if XPLAINED_A1_DEMO
 	writeUserByte('P'); writeUserByte('A'); writeUserByte('N');
 	writeUserByte('I'); writeUserByte('D'); writeUserByte(' ');
 	writeUserByte('R'); writeUserByte('E'); writeUserByte('S'); 
 	writeUserByte('P'); writeUserByte('O'); writeUserByte('N');
 	writeUserByte('S'); writeUserByte('E'); writeUserByte('\n');
+	#endif
 	
 	/* User code here */
 	uint16_t panid;
@@ -685,13 +782,14 @@ uint16_t getPanidResponse(uint8_t* data, uint8_t len)
 /*****************************************************************************/
 uint8_t getChannelResponse(uint8_t* data, uint8_t len)
 {
-	// DEBUG
+	#if XPLAINED_A1_DEMO
 	writeUserByte('C'); writeUserByte('H'); writeUserByte('A');
 	writeUserByte('N'); writeUserByte('N'); writeUserByte('E');
 	writeUserByte('L'); writeUserByte(' '); writeUserByte('R');
 	writeUserByte('E'); writeUserByte('S'); writeUserByte('P');
 	writeUserByte('O'); writeUserByte('N'); writeUserByte('S');
 	writeUserByte('E'); writeUserByte('\n');
+	#endif
 	
 	/* User code here */
 	uint8_t channel = data[0];
@@ -702,7 +800,7 @@ uint8_t getChannelResponse(uint8_t* data, uint8_t len)
 /*****************************************************************************/
 uint8_t getTRXStateResponse(uint8_t* data, uint8_t len)
 {
-	// DEBUG
+	#if XPLAINED_A1_DEMO
 	writeUserByte('T'); writeUserByte('R'); writeUserByte('X');
 	writeUserByte(' '); writeUserByte('S'); writeUserByte('T');
 	writeUserByte('A'); writeUserByte('T'); writeUserByte('E');
@@ -710,6 +808,7 @@ uint8_t getTRXStateResponse(uint8_t* data, uint8_t len)
 	writeUserByte('S'); writeUserByte('P'); writeUserByte('O'); 
 	writeUserByte('N'); writeUserByte('S');	writeUserByte('E'); 
 	writeUserByte('\n');
+	#endif
 	
 	/* User code here */	
 	uint8_t trxState = data[0];
@@ -720,13 +819,14 @@ uint8_t getTRXStateResponse(uint8_t* data, uint8_t len)
 /*****************************************************************************/
 uint8_t getTxPowerResponse(uint8_t* data, uint8_t len)
 {
-	// DEBUG
+	#if XPLAINED_A1_DEMO
 	writeUserByte('T'); writeUserByte('X'); writeUserByte(' ');
 	writeUserByte('P'); writeUserByte('O'); writeUserByte('W');
 	writeUserByte('E'); writeUserByte('R'); writeUserByte(' ');
 	writeUserByte('R');	writeUserByte('E'); writeUserByte('S'); 
 	writeUserByte('P'); writeUserByte('O'); writeUserByte('N'); 
 	writeUserByte('S');	writeUserByte('E'); writeUserByte('\n');
+	#endif
 			
 	/* User code here */
 	uint8_t txPower = data[0];
@@ -737,7 +837,7 @@ uint8_t getTxPowerResponse(uint8_t* data, uint8_t len)
 /*****************************************************************************/
 uint8_t getAckStateResponse(uint8_t* data, uint8_t len)
 {
-	// DEBUG
+	#if XPLAINED_A1_DEMO
 	writeUserByte('A'); writeUserByte('C'); writeUserByte('K');
 	writeUserByte(' '); writeUserByte('S'); writeUserByte('T');
 	writeUserByte('A'); writeUserByte('T'); writeUserByte('E');
@@ -745,6 +845,7 @@ uint8_t getAckStateResponse(uint8_t* data, uint8_t len)
 	writeUserByte('S'); writeUserByte('P');	writeUserByte('O'); 
 	writeUserByte('N'); writeUserByte('S');	writeUserByte('E'); 
 	writeUserByte('\n');
+	#endif
 	
 	/* User code here */
 	uint8_t ackState = data[0];

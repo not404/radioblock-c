@@ -45,9 +45,11 @@
 
 #include <avr/io.h>
 #include "avr_compiler.h"
-#include "simplemesh-api.h"
-#include "usart_driver.h"
-#include "TC_driver.h"
+#include "simplemesh-api/simplemesh-api.h"
+#include "xmega_uart/usart_driver.h"
+#include "xmega_timer_counter/TC_driver.h"
+#include "xmega_clock/clksys_driver.h"
+#include "xmega_gpio/port_driver.h"
 
 /*****************************************************************************
 *****************************************************************************/
@@ -58,6 +60,7 @@
 #define UARTC0 USARTC0
 #define UARTF0 USARTF0
 
+#if 0
 // Clock
 #define CLKSYS_Enable( _oscSel ) ( OSC.CTRL |= (_oscSel) )
 #define CLKSYS_IsReady( _oscSel ) ( OSC.STATUS & (_oscSel) )
@@ -124,6 +127,8 @@
  */
 #define PORT_GetPortValue( _port ) ( (_port)->IN )
 
+#endif //0
+
 #define USERCIRCSIZE	256
 /*****************************************************************************
 *****************************************************************************/
@@ -151,6 +156,7 @@ uint8_t testBuf[6] = {'H', 'e', 'l', 'l', 'o', '!'};
 /*****************************************************************************
 *****************************************************************************/
 // Functions
+#if 0
 /*	CCP write helper function written in assembly.
  *
  *  This function is written in assembly because of the time critical
@@ -175,6 +181,7 @@ void CCPWrite( volatile uint8_t * address, uint8_t value )
 		: "r16", "r30", "r31"
 		);
 }
+
 
 /*****************************************************************************/
 /*	This function changes the prescaler configuration.
@@ -214,6 +221,7 @@ uint8_t CLKSYS_Main_ClockSource_Select( CLK_SCLKSEL_t clockSource )
 	return clkCtrl;
 }
 
+#endif //0
 /*****************************************************************************/
 void clockInit(void)
 {
@@ -453,6 +461,9 @@ int main(void)
 	// Configure PORTA as output to measure delay timer...
 	// These pins are on Xplained header J2
 	PORT_SetPinsAsOutput( &PORTA, 0xFF );
+	
+	// Use one of the Xplained-A1 pins. SW4 - PD4
+	PORT_SetPinsAsInput( &PORTD, 0x10 );
 
 	// Check UART operation
 	//testUartTx();
@@ -757,43 +768,3 @@ uint8_t readUserByte(void)
 
 	return data;
 }
-
-#if 0
-/*****************************************************************************/
-
-dataConfirmation
-/*****************************************************************************/
-
-dataIndication
-/*****************************************************************************/
-
-getAddressResponse
-/*****************************************************************************/
-
-getPanidResponse
-/*****************************************************************************/
-
-getChannelResponse
-/*****************************************************************************/
-
-getTRXStateResponse
-/*****************************************************************************/
-
-getTxPowerResponse
-/*****************************************************************************/
-
-getAckStateResponse
-/*****************************************************************************/
-#endif
-
-/*****************************************************************************/
-
-/*****************************************************************************/
-
-/*****************************************************************************/
-
-/*****************************************************************************/
-
-/*****************************************************************************/
-
-/*****************************************************************************/

@@ -111,18 +111,46 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="simplemesh-api.c">
+    <Compile Include="simplemesh-api\simplemesh-api.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="simplemesh-api\simplemesh-api.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="simplemesh_api_demo.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="TC_driver.c">
+    <Compile Include="xmega_clock\clksys_driver.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="usart_driver.c">
+    <Compile Include="xmega_clock\clksys_driver.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="xmega_gpio\port_driver.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="xmega_gpio\port_driver.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="xmega_timer_counter\TC_driver.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="xmega_timer_counter\TC_driver.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="xmega_uart\usart_driver.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="xmega_uart\usart_driver.h">
+      <SubType>compile</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="xmega_timer_counter" />
+    <Folder Include="xmega_gpio" />
+    <Folder Include="xmega_uart" />
+    <Folder Include="xmega_clock" />
+    <Folder Include="simplemesh-api" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>

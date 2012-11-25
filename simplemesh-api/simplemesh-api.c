@@ -541,6 +541,125 @@ uint8_t getAckState(void (*uartTx)(uint8_t *array, uint8_t length), uint8_t* uar
 										Receive side State Machine
 *****************************************************************************/
 /*
+	This function should be called from your ISR or Polling loop.
+	
+	The logic is that every byte received increments the isrLen counter and
+	we already know the structure of a received command frame. So, as we 
+	increment through the received bytes we know which byte(s) we are 
+	receiving and apply logic to switch the state. When we've received all
+	the bytes the appropriate command flag is thrown which allows the function
+	"processResponse" to finish the processing of the command.
+*/
+void parseRxBytes(uint8_t receivedData)
+{
+	isrLen++;
+	// Just write the received byte, the bytes are processed in main.
+	// DEBUG writeByte(receivedData);
+	
+	// Implement a mini-parser here. Every command must get acked so we
+	// capture the ACK here and set a flag to alert user code.
+	if(1 == isrLen)
+	{
+		// The first byte should be the start byte 0xab - Reset it not.
+		if(APP_UART_START_BYTE != receivedData)
+			isrLen = 0;;
+	}
+	
+	if(2 == isrLen)
+	{
+		// The second byte is the size, save off to a global variable.
+		cmdLen = receivedData;
+		
+		// SimpleMesh has a 113 byte useful payload:
+		// 128 - 9 (MAC Header) - 6 (NWK Header) = 113
+		// Reject longer frames.
+		if(113 < cmdLen)
+		{
+			isrLen = 0;
+			cmdLen = 0;
+		}		
+	}
+	
+	if(3 == isrLen)
+	{
+		// The third byte is the cmd id byte, save off in a global variable.
+		isrCmd = receivedData;
+	}
+	
+	// Two commands are single byte responses - i.e. no payload.
+	// These are CMD_RX_TEST_RESPONSE and CMD_RX_WAKEUP_INDICATION,
+	// handle them here.
+	if(((4 == isrLen) || (5 == isrLen)) && ((CMD_RX_TEST_RESPONSE == isrCmd) || (CMD_RX_WAKEUP_INDICATION == isrCmd)))
+	{
+		// Could collect and check CRC - Left as an exercise for the user.
+				
+		// Reset variables used to process the command.
+		if(5 == isrLen)
+		{
+			if((isrCmd == CMD_RX_TEST_RESPONSE))
+				testCmd = 1;
+			else
+				wakeCmd = 1;
+				
+			// Reset the len.
+			isrLen = 0;
+		}
+	}
+	
+	// Catch ACK command Status and CRC bytes here...
+	if(((4 == isrLen) || (5 == isrLen) || (6 == isrLen)) && (CMD_RX_ACK == isrCmd))
+	{		
+		// Grab the ACK Status byte and place in a global.
+		if(4 == isrLen)
+			ackStatus = receivedData;
+			
+		// Could collect and check CRC - Left as an exercise for the user.			
+				
+		// Reset variables used to process the ACK and set the ACK flag.
+		if(6 == isrLen)
+		{
+			isrLen = 0; //Reset this in the user ACK handler.
+			ackFlag = 1;
+			
+			// Reset the len.
+			isrLen = 0;
+		}
+	}
+	
+	// If it isn't an ACK or Test Response or Wakeup Indication, then it is another command.
+	if( ((CMD_RX_ACK != isrCmd) &&
+			(CMD_RX_TEST_RESPONSE != isrCmd) &&
+			(CMD_RX_WAKEUP_INDICATION != isrCmd)) &&
+			(isrLen > 3) )
+	{
+		/*	The length of a serial frame does not include:
+				1. Start byte
+				2. Size byte
+				3. 2 CRC bytes
+				
+				So, the CRC bytes start at isrLen - 4... Or, cmdLen + 2.
+		*/
+		if(isrLen > (cmdLen+3))
+		{
+			// We have received all the command bytes and this should be
+			// the last CRC byte.
+			if(isrLen == cmdLen+4)
+			{
+				// We are done receiving this commands. set the appropriate flags.
+				// This variable must be reset to 0 in the user function.
+				cmdFlag = 1;
+				
+				isrLen = 0;
+			}
+		}
+		else if(isrLen < (cmdLen+3))
+		{
+			// For non-ACK commands, we record the command bytes and drop the crc bytes.
+			writeByte(receivedData);
+		}	
+	}	
+}
+/*
 	After the ISR or the polling loop catches the serial data returned from 
 	RadioBlocks it needs to be parsed. This function parses the received data.
 	Remember that Test Response and Wakeup indication have no status or return 

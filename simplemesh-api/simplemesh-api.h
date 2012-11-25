@@ -225,8 +225,9 @@ uint8_t 	getTxPowerResponse(uint8_t* data, uint8_t len);
 uint8_t 	getAckStateResponse(uint8_t* data, uint8_t len);
 
 // Function should be called by user's UART function when a byte is received.
-void 			processResponse(void);
-void 			rxState(uint8_t* buf, uint8_t cmd, uint8_t len);
+void		parseRxBytes(uint8_t receivedData);
+void 		processResponse(void);
+void 		rxState(uint8_t* buf, uint8_t cmd, uint8_t len);
 
 // Helper Functions - Used internally
 uint16_t 	appCrcCcitt(uint8_t size, uint8_t* uartBuf);

@@ -60,74 +60,6 @@
 #define UARTC0 USARTC0
 #define UARTF0 USARTF0
 
-#if 0
-// Clock
-#define CLKSYS_Enable( _oscSel ) ( OSC.CTRL |= (_oscSel) )
-#define CLKSYS_IsReady( _oscSel ) ( OSC.STATUS & (_oscSel) )
-
-/*
-		Sets the data direction of a set of pins to output
-
-		This macro sets the data direction of the selected port pins to output
-		without altering the data direction of the other pins in that port.
-		
-		_port         Pointer to the PORT_t instance.
-		_outputMask   A bit mask of the pins to set as output. A one in bit
-		              location n will configure pin n as output.
- */
-#define PORT_SetPinsAsOutput( _port, _outputMask ) ( (_port)->DIRSET = _outputMask )
-
-/*
-		brief Set the output value of a set of I/O pins to logic high.
-
-		This macro sets the output value of a set of I/O pins to logic high.
-		(Unless inverted I/O has been enabled for the pins) It does not alter the
-		pins not specified in the bit mask.
-	
-		_port         Pointer to the PORT_t instance.
-		_setMask      The bit mask of pins to set to logic high level.
- */
-#define PORT_SetPins( _port, _setMask) ( (_port)->OUTSET = _setMask )
-
-/*
-		Set the output value of a set of I/O pins to logic low.
-		
-		This macro sets the output value of a set of I/O pins to logic low.
-		(Unless inverted I/O has been enabled for the pins) It does not alter the
-		pins not specified in the bit mask.
-		
-		_port         Pointer to the PORT_t instance.
-		_clearMask    The bit mask of pins to set to logic low level.
- */
-#define PORT_ClearPins( _port, _clearMask) ( (_port)->OUTCLR = _clearMask )
-
-
-
-/*
-		Toggle the output value of a set of I/O pins.
-	
-		This macro toggles the output value of a set of I/O pins. It does not
-		alter the output value of pins not specified in the bit mask.
-	
-		_port         Pointer to the PORT_t instance.
-		_toggleMask   The bit mask of pins to toggle.
- */
-#define PORT_TogglePins( _port, _toggleMask ) ( (_port)->OUTTGL = _toggleMask )
-
-
-
-/*
-		This macro returns the current logic value of the port or virtual
-	  port.
-	
-		This macro can also be used to access virtual ports.
-	
-		_port     Pointer to the PORT_t or VPORT_t instance.
-		          The current logic state of the port.
- */
-#define PORT_GetPortValue( _port ) ( (_port)->IN )
-
-#endif //0
 
 #define USERCIRCSIZE	256
 /*****************************************************************************
@@ -156,72 +88,6 @@ uint8_t testBuf[6] = {'H', 'e', 'l', 'l', 'o', '!'};
 /*****************************************************************************
 *****************************************************************************/
 // Functions
-#if 0
-/*	CCP write helper function written in assembly.
- *
- *  This function is written in assembly because of the time critical
- *  operation of writing to the registers.
- *
- *  param address A pointer to the address to write to.
- *  param value   The value to put in to the register.
- */
-void CCPWrite( volatile uint8_t * address, uint8_t value )
-{
-	volatile uint8_t * tmpAddr = address;
-#ifdef RAMPZ
-	RAMPZ = 0;
-#endif
-	asm volatile(
-		"movw r30,  %0"	      "\n\t"
-		"ldi  r16,  %2"	      "\n\t"
-		"out   %3, r16"	      "\n\t"
-		"st     Z,  %1"       "\n\t"
-		:
-		: "r" (tmpAddr), "r" (value), "M" (CCP_IOREG_gc), "i" (&CCP)
-		: "r16", "r30", "r31"
-		);
-}
-
-
-/*****************************************************************************/
-/*	This function changes the prescaler configuration.
-
-		Change the configuration of the three system clock
-		prescaler is one single operation. The user must make sure that
-		the main CPU clock does not exceed recommended limits.
-
-		param  PSAfactor   Prescaler A division factor, OFF or 2 to 512 in
-		                   powers of two.
-		param  PSBCfactor  Prescaler B and C division factor, in the combination
-	                     of (1,1), (1,2), (4,1) or (2,2).
- */
-void CLKSYS_Prescalers_Config( CLK_PSADIV_t PSAfactor, CLK_PSBCDIV_t PSBCfactor )
-{
-	uint8_t PSconfig = (uint8_t) PSAfactor | PSBCfactor;
-	CCPWrite( &CLK.PSCTRL, PSconfig );
-}
-
-/*****************************************************************************/
-/*	This function selects the main system clock source.
-
-		Hardware will disregard any attempts to select a clock source that is not
-		enabled or not stable. If the change fails, make sure the source is ready
-		and running and try again.
-
-		param  clockSource  Clock source to use as input for the system clock
-	                      prescaler block.
-	
-		return  Non-zero if change was successful.
- */
-uint8_t CLKSYS_Main_ClockSource_Select( CLK_SCLKSEL_t clockSource )
-{
-	uint8_t clkCtrl = ( CLK.CTRL & ~CLK_SCLKSEL_gm ) | clockSource;
-	CCPWrite( &CLK.CTRL, clkCtrl );
-	clkCtrl = ( CLK.CTRL & clockSource );
-	return clkCtrl;
-}
-
-#endif //0
 /*****************************************************************************/
 void clockInit(void)
 {
@@ -426,7 +292,6 @@ int main(void)
 {
 	uint8_t cmdBuf[128];
 	uint8_t i;
-
 
 	// Init peripherals.
 	// Clock is set to 32MHz.
